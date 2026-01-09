@@ -531,7 +531,7 @@ char *yytext;
 #line 1 "src/dj.l"
 /* dj.l: SCANNER for DJ */
 #line 7 "src/dj.l"
-  #define DEBUG_SCAN 1
+  #define DEBUG_SCAN 0
   typedef int Token;
   Token scanned(Token t);
 #line 537 "src/lex.yy.c"

@@ -157,16 +157,29 @@ int yyparse (void);
 #line 3 "src/dj.y"
 
   #include "lex.yy.c"
-  
+  #include "../include/ast.h"
+  #include "../include/symtbl.h"
+  #include "../include/typecheck.h"
+  #include "../include/codegen.h"
+    
+  #define DEBUG_SYMTBL 0
+  #define DEBUG_AST 0
+
+  /* Symbols in this grammer are represented as ASTs */
+  #define YYSTYPE ASTree *
+
+  /* Declare global AST for entire program */
+  ASTree *pgmAST;
+ 
   /* Function for printing generic syntax-error messages */
   void yyerror(const char *str) {
-    printf("Syntax error on line %d at token %s\n",
-           yylineno,yytext);
-    printf("Halting compiler.\n");
+    printf("Syntax error on line %d at token %s\n",yylineno,yytext);
+    printf("(This version of the compiler exits after finding the first ");
+    printf("syntax error.)\n");
     exit(-1);
   }
 
-#line 171 "src/dj.tab.c"
+#line 184 "src/dj.tab.c"
 
 
 /* Symbol kind.  */
@@ -208,7 +221,18 @@ enum yysymbol_kind_t
   YYSYMBOL_RPAREN = 32,                    /* RPAREN  */
   YYSYMBOL_ENDOFFILE = 33,                 /* ENDOFFILE  */
   YYSYMBOL_YYACCEPT = 34,                  /* $accept  */
-  YYSYMBOL_pgm = 35                        /* pgm  */
+  YYSYMBOL_pgm = 35,                       /* pgm  */
+  YYSYMBOL_dj = 36,                        /* dj  */
+  YYSYMBOL_class_list = 37,                /* class_list  */
+  YYSYMBOL_class = 38,                     /* class  */
+  YYSYMBOL_method_list = 39,               /* method_list  */
+  YYSYMBOL_method = 40,                    /* method  */
+  YYSYMBOL_variable_declaration_list = 41, /* variable_declaration_list  */
+  YYSYMBOL_variable_declaration = 42,      /* variable_declaration  */
+  YYSYMBOL_expression_list = 43,           /* expression_list  */
+  YYSYMBOL_expression = 44,                /* expression  */
+  YYSYMBOL_data_type = 45,                 /* data_type  */
+  YYSYMBOL_identifier = 46                 /* identifier  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -325,7 +349,7 @@ typedef int yytype_uint16;
 
 
 /* Stored state numbers (used for stacks). */
-typedef yytype_int8 yy_state_t;
+typedef yytype_uint8 yy_state_t;
 
 /* State numbers in computations.  */
 typedef int yy_state_fast_t;
@@ -534,18 +558,18 @@ union yyalloc
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  2
+#define YYFINAL  12
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   0
+#define YYLAST   595
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  34
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  2
+#define YYNNTS  13
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  2
+#define YYNRULES  53
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  3
+#define YYNSTATES  154
 
 /* YYMAXUTOK -- Last valid token kind.  */
 #define YYMAXUTOK   288
@@ -595,9 +619,14 @@ static const yytype_int8 yytranslate[] =
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_int8 yyrline[] =
+static const yytype_int16 yyrline[] =
 {
-       0,    26,    26
+       0,    50,    50,    57,    62,    67,    72,    81,    85,    91,
+      97,   103,   109,   115,   121,   127,   133,   142,   146,   152,
+     160,   168,   176,   187,   191,   197,   204,   208,   214,   217,
+     220,   223,   226,   230,   233,   236,   240,   245,   249,   253,
+     257,   261,   265,   268,   272,   276,   281,   286,   290,   293,
+     296,   302,   305,   311
 };
 #endif
 
@@ -618,7 +647,9 @@ static const char *const yytname[] =
   "PLUS", "MINUS", "TIMES", "EQUALITY", "LESS", "ASSERT", "OR", "NOT",
   "IF", "ELSE", "WHILE", "ASSIGN", "NUL", "NEW", "THIS", "DOT",
   "SEMICOLON", "LBRACE", "RBRACE", "LPAREN", "RPAREN", "ENDOFFILE",
-  "$accept", "pgm", YY_NULLPTR
+  "$accept", "pgm", "dj", "class_list", "class", "method_list", "method",
+  "variable_declaration_list", "variable_declaration", "expression_list",
+  "expression", "data_type", "identifier", YY_NULLPTR
 };
 
 static const char *
@@ -628,21 +659,36 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-1)
+#define YYPACT_NINF (-90)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
 
-#define YYTABLE_NINF (-1)
+#define YYTABLE_NINF (-53)
 
 #define yytable_value_is_error(Yyn) \
-  0
+  ((Yyn) == YYTABLE_NINF)
 
 /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
    STATE-NUM.  */
-static const yytype_int8 yypact[] =
+static const yytype_int16 yypact[] =
 {
-      -1,     0,    -1
+     117,    -3,     5,   -18,    20,    -6,   126,   -90,     5,   -90,
+      23,   214,   -90,   -90,     7,   -90,    34,     5,   -90,   -90,
+      22,    41,   445,   445,    43,    49,   -90,     5,   -90,   445,
+     214,    60,   247,   528,     5,    -1,   214,     5,    61,   445,
+      62,   552,    10,    85,   445,   445,    71,   169,    65,   265,
+     -90,   -90,   545,   445,   445,   445,   445,   445,   445,     5,
+     -90,   -90,   445,   445,   214,   283,    72,     9,   465,   -90,
+     472,   493,    74,   -90,   -90,   -90,   -90,    -9,    -9,    80,
+      69,   562,   568,    33,   552,   500,   301,   -90,    16,    63,
+     -90,    39,   -90,    40,     5,   -90,   -90,    86,    88,   -90,
+     445,   445,   -90,   -90,   -90,    46,    47,     5,   -90,   -90,
+       5,   -90,    55,    78,   445,   445,   552,   521,   -90,   -90,
+      70,    83,    78,   -90,    63,   319,   337,   -90,   -90,    63,
+       5,   102,   -90,     5,   104,   105,   107,   108,   445,   114,
+     214,   355,   214,   214,   373,   -90,   214,   391,   409,   -90,
+     427,   -90,   -90,   -90
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -650,51 +696,211 @@ static const yytype_int8 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       2,     0,     1
+       0,     0,     0,     0,     0,     0,     0,     8,     0,    53,
+       0,     0,     1,     2,     0,     7,     0,     0,    51,    29,
+       0,     0,     0,     0,     0,     0,    28,     0,    31,     0,
+       0,     0,     0,     0,     0,    30,     0,     0,     0,     0,
+       0,    48,    30,    42,     0,     0,     0,     0,     0,     0,
+      24,     3,     0,     0,     0,     0,     0,     0,     0,     0,
+      27,    25,     0,     0,     0,     0,     0,     0,     0,    50,
+       0,     0,     0,    34,    23,     4,    26,    37,    38,    39,
+      40,    41,    43,    35,    44,     0,     0,     5,     0,     0,
+       9,     0,    18,     0,     0,    52,    49,     0,     0,    33,
+       0,     0,    32,     6,    13,     0,     0,     0,    11,    17,
+       0,    10,     0,    25,     0,     0,    45,     0,    15,    14,
+       0,     0,     0,    12,     0,     0,     0,    36,    16,     0,
+       0,     0,    47,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,     0,    46,     0,     0,     0,    19,
+       0,    21,    20,    22
 };
 
 /* YYPGOTO[NTERM-NUM].  */
-static const yytype_int8 yypgoto[] =
+static const yytype_int16 yypgoto[] =
 {
-      -1,    -1
+     -90,   -90,   -90,   -90,   143,   -80,   -89,   -29,   -27,    31,
+     103,    87,    -2
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     1
+       0,     4,     5,     6,     7,    91,    92,    30,    31,    32,
+      33,    34,    42
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
    positive, shift that token.  If negative, reduce the rule whose
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
-static const yytype_int8 yytable[] =
+static const yytype_int16 yytable[] =
 {
-       2
+      10,     8,   109,    48,   -52,    55,    16,    64,   105,    35,
+       9,    11,    89,   112,     9,    38,   109,    18,    59,    89,
+      12,     9,    62,   109,    18,    46,   120,    13,    35,    17,
+      63,   109,    61,    62,    35,    66,    36,    48,    93,    90,
+      37,    63,    89,    89,     9,     9,   104,    18,    18,    89,
+      89,     9,     9,    39,    18,    18,   100,    83,    89,   106,
+       9,    49,    35,    18,   101,    95,    48,    65,     9,   108,
+     111,    18,    40,    89,    44,     9,   118,   119,    18,    48,
+      45,    53,    54,    55,   -53,   123,    95,    95,    50,    95,
+      67,    95,   113,    74,    69,    86,    59,    53,    54,    55,
+     128,    88,    72,    95,    95,   121,    99,    59,   122,   124,
+      95,   143,    59,   146,   129,   114,    48,   115,    95,    48,
+       1,     2,    95,   135,     3,    41,    43,    95,   134,     1,
+       2,   136,    47,    14,   138,    52,   137,   140,    35,   139,
+      35,    35,    68,   142,    35,   125,   126,    70,    71,    15,
+       0,     0,    52,     0,    94,     0,    77,    78,    79,    80,
+      81,    82,     0,     0,     0,    84,    85,     0,    52,   141,
+       0,   144,     0,   147,   148,    94,   107,   150,   110,     0,
+      94,    53,    54,    55,    56,    57,     0,    58,     0,    52,
+       0,     0,   110,    94,     0,     0,    59,     0,     0,   110,
+       0,    73,     0,   116,   117,     0,     0,   110,     0,     0,
+       0,   130,     0,     0,     0,     0,   133,     0,     0,     9,
+       0,     0,    18,    19,    20,    21,     0,     0,    52,    52,
+       0,    22,     0,    23,    24,     0,    25,     0,    26,    27,
+      28,     0,     0,     0,    52,    29,     0,    52,     0,     0,
+      52,    52,     9,    52,     0,     0,    19,    20,    21,     0,
+       0,     0,     0,     0,    22,     0,    23,    24,     0,    25,
+       9,    26,    27,    28,    19,    20,    21,    51,    29,     0,
+       0,     0,    22,     0,    23,    24,     0,    25,     9,    26,
+      27,    28,    19,    20,    21,    75,    29,     0,     0,     0,
+      22,     0,    23,    24,     0,    25,     9,    26,    27,    28,
+      19,    20,    21,    87,    29,     0,     0,     0,    22,     0,
+      23,    24,     0,    25,     9,    26,    27,    28,    19,    20,
+      21,   103,    29,     0,     0,     0,    22,     0,    23,    24,
+       0,    25,     9,    26,    27,    28,    19,    20,    21,   131,
+      29,     0,     0,     0,    22,     0,    23,    24,     0,    25,
+       9,    26,    27,    28,    19,    20,    21,   132,    29,     0,
+       0,     0,    22,     0,    23,    24,     0,    25,     9,    26,
+      27,    28,    19,    20,    21,   145,    29,     0,     0,     0,
+      22,     0,    23,    24,     0,    25,     9,    26,    27,    28,
+      19,    20,    21,   149,    29,     0,     0,     0,    22,     0,
+      23,    24,     0,    25,     9,    26,    27,    28,    19,    20,
+      21,   151,    29,     0,     0,     0,    22,     0,    23,    24,
+       0,    25,     9,    26,    27,    28,    19,    20,    21,   152,
+      29,     0,     0,     0,    22,     0,    23,    24,     0,    25,
+       9,    26,    27,    28,    19,    20,    21,   153,    29,     0,
+       0,     0,    22,     0,    23,    24,     0,    25,     0,    26,
+      27,    28,     0,     0,     0,     0,    29,    53,    54,    55,
+      56,    57,     0,    58,    53,    54,    55,    56,    57,     0,
+      58,     0,    59,     0,     0,     0,     0,    96,     0,    59,
+       0,     0,     0,     0,    97,    53,    54,    55,    56,    57,
+       0,    58,    53,    54,    55,    56,    57,     0,    58,     0,
+      59,     0,     0,     0,     0,    98,     0,    59,     0,     0,
+       0,     0,   102,    53,    54,    55,    56,    57,     0,    58,
+      53,    54,    55,    56,    57,     0,    58,     0,    59,     0,
+       0,     0,     0,   127,     0,    59,    60,    53,    54,    55,
+      56,    57,     0,    58,    53,    54,    55,    56,    57,     0,
+      58,     0,    59,    76,    53,    54,    55,    56,   -53,    59,
+      53,    54,    55,    56,    57,     0,     0,     0,     0,    59,
+       0,     0,     0,     0,     0,    59
 };
 
-static const yytype_int8 yycheck[] =
+static const yytype_int16 yycheck[] =
 {
-       0
+       2,     4,    91,    30,     5,    14,     8,    36,    88,    11,
+       5,    29,     3,    93,     5,    17,   105,     8,    27,     3,
+       0,     5,    23,   112,     8,    27,   106,    33,    30,     6,
+      31,   120,    34,    23,    36,    37,    29,    64,    67,    30,
+       6,    31,     3,     3,     5,     5,    30,     8,     8,     3,
+       3,     5,     5,    31,     8,     8,    23,    59,     3,    88,
+       5,    30,    64,     8,    31,    67,    93,    36,     5,    30,
+      30,     8,    31,     3,    31,     5,    30,    30,     8,   106,
+      31,    12,    13,    14,    15,    30,    88,    89,    28,    91,
+      29,    93,    94,    28,    32,    64,    27,    12,    13,    14,
+      30,    29,    31,   105,   106,   107,    32,    27,   110,    31,
+     112,   140,    27,   142,    31,    29,   143,    29,   120,   146,
+       3,     4,   124,    21,     7,    22,    23,   129,   130,     3,
+       4,   133,    29,     7,    29,    32,    32,    29,   140,    32,
+     142,   143,    39,    29,   146,   114,   115,    44,    45,     6,
+      -1,    -1,    49,    -1,    67,    -1,    53,    54,    55,    56,
+      57,    58,    -1,    -1,    -1,    62,    63,    -1,    65,   138,
+      -1,   140,    -1,   142,   143,    88,    89,   146,    91,    -1,
+      93,    12,    13,    14,    15,    16,    -1,    18,    -1,    86,
+      -1,    -1,   105,   106,    -1,    -1,    27,    -1,    -1,   112,
+      -1,    32,    -1,   100,   101,    -1,    -1,   120,    -1,    -1,
+      -1,   124,    -1,    -1,    -1,    -1,   129,    -1,    -1,     5,
+      -1,    -1,     8,     9,    10,    11,    -1,    -1,   125,   126,
+      -1,    17,    -1,    19,    20,    -1,    22,    -1,    24,    25,
+      26,    -1,    -1,    -1,   141,    31,    -1,   144,    -1,    -1,
+     147,   148,     5,   150,    -1,    -1,     9,    10,    11,    -1,
+      -1,    -1,    -1,    -1,    17,    -1,    19,    20,    -1,    22,
+       5,    24,    25,    26,     9,    10,    11,    30,    31,    -1,
+      -1,    -1,    17,    -1,    19,    20,    -1,    22,     5,    24,
+      25,    26,     9,    10,    11,    30,    31,    -1,    -1,    -1,
+      17,    -1,    19,    20,    -1,    22,     5,    24,    25,    26,
+       9,    10,    11,    30,    31,    -1,    -1,    -1,    17,    -1,
+      19,    20,    -1,    22,     5,    24,    25,    26,     9,    10,
+      11,    30,    31,    -1,    -1,    -1,    17,    -1,    19,    20,
+      -1,    22,     5,    24,    25,    26,     9,    10,    11,    30,
+      31,    -1,    -1,    -1,    17,    -1,    19,    20,    -1,    22,
+       5,    24,    25,    26,     9,    10,    11,    30,    31,    -1,
+      -1,    -1,    17,    -1,    19,    20,    -1,    22,     5,    24,
+      25,    26,     9,    10,    11,    30,    31,    -1,    -1,    -1,
+      17,    -1,    19,    20,    -1,    22,     5,    24,    25,    26,
+       9,    10,    11,    30,    31,    -1,    -1,    -1,    17,    -1,
+      19,    20,    -1,    22,     5,    24,    25,    26,     9,    10,
+      11,    30,    31,    -1,    -1,    -1,    17,    -1,    19,    20,
+      -1,    22,     5,    24,    25,    26,     9,    10,    11,    30,
+      31,    -1,    -1,    -1,    17,    -1,    19,    20,    -1,    22,
+       5,    24,    25,    26,     9,    10,    11,    30,    31,    -1,
+      -1,    -1,    17,    -1,    19,    20,    -1,    22,    -1,    24,
+      25,    26,    -1,    -1,    -1,    -1,    31,    12,    13,    14,
+      15,    16,    -1,    18,    12,    13,    14,    15,    16,    -1,
+      18,    -1,    27,    -1,    -1,    -1,    -1,    32,    -1,    27,
+      -1,    -1,    -1,    -1,    32,    12,    13,    14,    15,    16,
+      -1,    18,    12,    13,    14,    15,    16,    -1,    18,    -1,
+      27,    -1,    -1,    -1,    -1,    32,    -1,    27,    -1,    -1,
+      -1,    -1,    32,    12,    13,    14,    15,    16,    -1,    18,
+      12,    13,    14,    15,    16,    -1,    18,    -1,    27,    -1,
+      -1,    -1,    -1,    32,    -1,    27,    28,    12,    13,    14,
+      15,    16,    -1,    18,    12,    13,    14,    15,    16,    -1,
+      18,    -1,    27,    28,    12,    13,    14,    15,    16,    27,
+      12,    13,    14,    15,    16,    -1,    -1,    -1,    -1,    27,
+      -1,    -1,    -1,    -1,    -1,    27
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,    35,     0
+       0,     3,     4,     7,    35,    36,    37,    38,     4,     5,
+      46,    29,     0,    33,     7,    38,    46,     6,     8,     9,
+      10,    11,    17,    19,    20,    22,    24,    25,    26,    31,
+      41,    42,    43,    44,    45,    46,    29,     6,    46,    31,
+      31,    44,    46,    44,    31,    31,    46,    44,    42,    43,
+      28,    30,    44,    12,    13,    14,    15,    16,    18,    27,
+      28,    46,    23,    31,    41,    43,    46,    29,    44,    32,
+      44,    44,    31,    32,    28,    30,    28,    44,    44,    44,
+      44,    44,    44,    46,    44,    44,    43,    30,    29,     3,
+      30,    39,    40,    41,    45,    46,    32,    32,    32,    32,
+      23,    31,    32,    30,    30,    39,    41,    45,    30,    40,
+      45,    30,    39,    46,    29,    29,    44,    44,    30,    30,
+      39,    46,    46,    30,    31,    43,    43,    32,    30,    31,
+      45,    30,    30,    45,    46,    21,    46,    32,    29,    32,
+      29,    43,    29,    41,    43,    30,    41,    43,    43,    30,
+      43,    30,    30,    30
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    34,    35
+       0,    34,    35,    36,    36,    36,    36,    37,    37,    38,
+      38,    38,    38,    38,    38,    38,    38,    39,    39,    40,
+      40,    40,    40,    41,    41,    42,    43,    43,    44,    44,
+      44,    44,    44,    44,    44,    44,    44,    44,    44,    44,
+      44,    44,    44,    44,    44,    44,    44,    44,    44,    44,
+      44,    45,    45,    46
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     0
+       0,     2,     2,     4,     5,     5,     6,     2,     1,     6,
+       7,     7,     8,     7,     8,     8,     9,     2,     1,     9,
+      10,    10,    11,     3,     2,     2,     3,     2,     1,     1,
+       1,     1,     4,     4,     3,     3,     6,     3,     3,     3,
+       3,     3,     2,     3,     3,     5,    11,     7,     2,     4,
+       3,     1,     1,     1
 };
 
 
@@ -1157,8 +1363,498 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
+  case 2: /* pgm: dj ENDOFFILE  */
+#line 50 "src/dj.y"
+                   {
+        pgmAST = yyvsp[-1];
+        return 0;
+    }
+#line 1374 "src/dj.tab.c"
+    break;
 
-#line 1163 "src/dj.tab.c"
+  case 3: /* dj: MAIN LBRACE expression_list RBRACE  */
+#line 57 "src/dj.y"
+                                         {
+        yyval = newAST(PROGRAM, newAST(CLASS_DECL_LIST, NULL, 0, NULL, 0), 0, NULL, yylineno);
+        appendToChildrenList(yyval, newAST(VAR_DECL_LIST, NULL, 0, NULL, 0));
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1384 "src/dj.tab.c"
+    break;
+
+  case 4: /* dj: MAIN LBRACE variable_declaration_list expression_list RBRACE  */
+#line 62 "src/dj.y"
+                                                                   {
+        yyval = newAST(PROGRAM, newAST(CLASS_DECL_LIST, NULL, 0, NULL, 0), 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-2]);
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1394 "src/dj.tab.c"
+    break;
+
+  case 5: /* dj: class_list MAIN LBRACE expression_list RBRACE  */
+#line 67 "src/dj.y"
+                                                    {
+        yyval = newAST(PROGRAM, yyvsp[-4], 0, NULL, yylineno);
+        appendToChildrenList(yyval, newAST(VAR_DECL_LIST, NULL, 0, NULL, 0));
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1404 "src/dj.tab.c"
+    break;
+
+  case 6: /* dj: class_list MAIN LBRACE variable_declaration_list expression_list RBRACE  */
+#line 72 "src/dj.y"
+                                                                              {
+        yyval = newAST(PROGRAM, yyvsp[-5], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-2]);
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1414 "src/dj.tab.c"
+    break;
+
+  case 7: /* class_list: class_list class  */
+#line 81 "src/dj.y"
+                       {
+        yyval = yyvsp[-1];
+        appendToChildrenList(yyval, yyvsp[0]);
+    }
+#line 1423 "src/dj.tab.c"
+    break;
+
+  case 8: /* class_list: class  */
+#line 85 "src/dj.y"
+            {
+        yyval = newAST(CLASS_DECL_LIST, yyvsp[0], 0, NULL, yylineno);
+    }
+#line 1431 "src/dj.tab.c"
+    break;
+
+  case 9: /* class: CLASS identifier EXTENDS identifier LBRACE RBRACE  */
+#line 91 "src/dj.y"
+                                                        {
+        yyval = newAST(NONFINAL_CLASS_DECL, yyvsp[-4], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-2]);
+        appendToChildrenList(yyval, newAST(VAR_DECL_LIST, NULL, 0, NULL, 0));
+        appendToChildrenList(yyval, newAST(METHOD_DECL_LIST, NULL, 0, NULL, 0));
+    }
+#line 1442 "src/dj.tab.c"
+    break;
+
+  case 10: /* class: CLASS identifier EXTENDS identifier LBRACE variable_declaration_list RBRACE  */
+#line 97 "src/dj.y"
+                                                                                  {
+        yyval = newAST(NONFINAL_CLASS_DECL, yyvsp[-5], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-3]);
+        appendToChildrenList(yyval, yyvsp[-1]);
+        appendToChildrenList(yyval, newAST(METHOD_DECL_LIST, NULL, 0, NULL, 0));
+    }
+#line 1453 "src/dj.tab.c"
+    break;
+
+  case 11: /* class: CLASS identifier EXTENDS identifier LBRACE method_list RBRACE  */
+#line 103 "src/dj.y"
+                                                                    {
+        yyval = newAST(NONFINAL_CLASS_DECL, yyvsp[-5], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-3]);
+        appendToChildrenList(yyval, newAST(VAR_DECL_LIST, NULL, 0, NULL, 0));
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1464 "src/dj.tab.c"
+    break;
+
+  case 12: /* class: CLASS identifier EXTENDS identifier LBRACE variable_declaration_list method_list RBRACE  */
+#line 109 "src/dj.y"
+                                                                                              {
+        yyval = newAST(NONFINAL_CLASS_DECL, yyvsp[-6], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-4]);
+        appendToChildrenList(yyval, yyvsp[-2]);
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1475 "src/dj.tab.c"
+    break;
+
+  case 13: /* class: FINAL CLASS identifier EXTENDS identifier LBRACE RBRACE  */
+#line 115 "src/dj.y"
+                                                              {
+        yyval = newAST(FINAL_CLASS_DECL, yyvsp[-4], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-2]);
+        appendToChildrenList(yyval, newAST(VAR_DECL_LIST, NULL, 0, NULL, 0));
+        appendToChildrenList(yyval, newAST(METHOD_DECL_LIST, NULL, 0, NULL, 0));
+    }
+#line 1486 "src/dj.tab.c"
+    break;
+
+  case 14: /* class: FINAL CLASS identifier EXTENDS identifier LBRACE variable_declaration_list RBRACE  */
+#line 121 "src/dj.y"
+                                                                                        {
+        yyval = newAST(FINAL_CLASS_DECL, yyvsp[-5], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-3]);
+        appendToChildrenList(yyval, yyvsp[-1]);
+        appendToChildrenList(yyval, newAST(METHOD_DECL_LIST, NULL, 0, NULL, 0));
+    }
+#line 1497 "src/dj.tab.c"
+    break;
+
+  case 15: /* class: FINAL CLASS identifier EXTENDS identifier LBRACE method_list RBRACE  */
+#line 127 "src/dj.y"
+                                                                          {
+        yyval = newAST(FINAL_CLASS_DECL, yyvsp[-5], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-3]);
+        appendToChildrenList(yyval, newAST(VAR_DECL_LIST, NULL, 0, NULL, 0));
+        appendToChildrenList(yyval, yyvsp[-1]);   
+    }
+#line 1508 "src/dj.tab.c"
+    break;
+
+  case 16: /* class: FINAL CLASS identifier EXTENDS identifier LBRACE variable_declaration_list method_list RBRACE  */
+#line 133 "src/dj.y"
+                                                                                                    {
+        yyval = newAST(FINAL_CLASS_DECL, yyvsp[-6], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-4]);
+        appendToChildrenList(yyval, yyvsp[-2]);
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1519 "src/dj.tab.c"
+    break;
+
+  case 17: /* method_list: method_list method  */
+#line 142 "src/dj.y"
+                         {
+        yyval = yyvsp[-1];
+        appendToChildrenList(yyval, yyvsp[0]);
+    }
+#line 1528 "src/dj.tab.c"
+    break;
+
+  case 18: /* method_list: method  */
+#line 146 "src/dj.y"
+             {
+        yyval = newAST(METHOD_DECL_LIST, yyvsp[0], 0, NULL, yylineno);
+    }
+#line 1536 "src/dj.tab.c"
+    break;
+
+  case 19: /* method: data_type identifier LPAREN data_type identifier RPAREN LBRACE expression_list RBRACE  */
+#line 152 "src/dj.y"
+                                                                                            {
+        yyval = newAST(NONFINAL_METHOD_DECL, yyvsp[-8], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-7]);
+        appendToChildrenList(yyval, yyvsp[-5]);
+        appendToChildrenList(yyval, yyvsp[-4]);
+        appendToChildrenList(yyval, newAST(VAR_DECL_LIST, NULL, 0, NULL, 0));
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1549 "src/dj.tab.c"
+    break;
+
+  case 20: /* method: data_type identifier LPAREN data_type identifier RPAREN LBRACE variable_declaration_list expression_list RBRACE  */
+#line 160 "src/dj.y"
+                                                                                                                      {
+        yyval = newAST(NONFINAL_METHOD_DECL, yyvsp[-9], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-8]);
+        appendToChildrenList(yyval, yyvsp[-6]);
+        appendToChildrenList(yyval, yyvsp[-5]);
+        appendToChildrenList(yyval, yyvsp[-2]);
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1562 "src/dj.tab.c"
+    break;
+
+  case 21: /* method: FINAL data_type identifier LPAREN data_type identifier RPAREN LBRACE expression_list RBRACE  */
+#line 168 "src/dj.y"
+                                                                                                  {
+        yyval = newAST(FINAL_METHOD_DECL, yyvsp[-8], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-7]);
+        appendToChildrenList(yyval, yyvsp[-5]);
+        appendToChildrenList(yyval, yyvsp[-4]);
+        appendToChildrenList(yyval, newAST(VAR_DECL_LIST, NULL, 0, NULL, 0));
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1575 "src/dj.tab.c"
+    break;
+
+  case 22: /* method: FINAL data_type identifier LPAREN data_type identifier RPAREN LBRACE variable_declaration_list expression_list RBRACE  */
+#line 176 "src/dj.y"
+                                                                                                                            {
+        yyval = newAST(FINAL_METHOD_DECL, yyvsp[-9], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-8]);
+        appendToChildrenList(yyval, yyvsp[-6]);
+        appendToChildrenList(yyval, yyvsp[-5]);
+        appendToChildrenList(yyval, yyvsp[-2]);
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1588 "src/dj.tab.c"
+    break;
+
+  case 23: /* variable_declaration_list: variable_declaration_list variable_declaration SEMICOLON  */
+#line 187 "src/dj.y"
+                                                               {
+        yyval = yyvsp[-2];
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1597 "src/dj.tab.c"
+    break;
+
+  case 24: /* variable_declaration_list: variable_declaration SEMICOLON  */
+#line 191 "src/dj.y"
+                                     {
+        yyval = newAST(VAR_DECL_LIST, yyvsp[-1], 0, NULL, yylineno);
+    }
+#line 1605 "src/dj.tab.c"
+    break;
+
+  case 25: /* variable_declaration: data_type identifier  */
+#line 197 "src/dj.y"
+                           {
+        yyval = newAST(VAR_DECL, yyvsp[-1], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[0]);
+    }
+#line 1614 "src/dj.tab.c"
+    break;
+
+  case 26: /* expression_list: expression_list expression SEMICOLON  */
+#line 204 "src/dj.y"
+                                           {
+        yyval = yyvsp[-2];
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1623 "src/dj.tab.c"
+    break;
+
+  case 27: /* expression_list: expression SEMICOLON  */
+#line 208 "src/dj.y"
+                           {
+        yyval = newAST(EXPR_LIST, yyvsp[-1], 0, NULL, yylineno);
+    }
+#line 1631 "src/dj.tab.c"
+    break;
+
+  case 28: /* expression: NUL  */
+#line 214 "src/dj.y"
+          { 
+        yyval = newAST(NULL_EXPR, NULL, 0, NULL, yylineno);
+    }
+#line 1639 "src/dj.tab.c"
+    break;
+
+  case 29: /* expression: NATLITERAL  */
+#line 217 "src/dj.y"
+                 { 
+        yyval = newAST(NAT_LITERAL_EXPR, NULL, atoi(yytext), NULL, yylineno);
+    }
+#line 1647 "src/dj.tab.c"
+    break;
+
+  case 30: /* expression: identifier  */
+#line 220 "src/dj.y"
+                 { 
+        yyval = newAST(ID_EXPR, yyvsp[0], 0, NULL, yylineno);
+    }
+#line 1655 "src/dj.tab.c"
+    break;
+
+  case 31: /* expression: THIS  */
+#line 223 "src/dj.y"
+           { 
+        yyval = newAST(THIS_EXPR, NULL, 0, NULL, yylineno); 
+    }
+#line 1663 "src/dj.tab.c"
+    break;
+
+  case 32: /* expression: identifier LPAREN expression RPAREN  */
+#line 226 "src/dj.y"
+                                          { 
+        yyval = newAST(METHOD_CALL_EXPR, yyvsp[-3], 0, NULL, yylineno); 
+        appendToChildrenList(yyval, yyvsp[-1]); 
+    }
+#line 1672 "src/dj.tab.c"
+    break;
+
+  case 33: /* expression: NEW identifier LPAREN RPAREN  */
+#line 230 "src/dj.y"
+                                   { 
+        yyval = newAST(NEW_EXPR, yyvsp[-2], 0, NULL, yylineno); 
+    }
+#line 1680 "src/dj.tab.c"
+    break;
+
+  case 34: /* expression: LPAREN expression RPAREN  */
+#line 233 "src/dj.y"
+                               { 
+        yyval = yyvsp[-1];
+    }
+#line 1688 "src/dj.tab.c"
+    break;
+
+  case 35: /* expression: expression DOT identifier  */
+#line 236 "src/dj.y"
+                                {
+        yyval = newAST(DOT_ID_EXPR, yyvsp[-2], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[0]);
+    }
+#line 1697 "src/dj.tab.c"
+    break;
+
+  case 36: /* expression: expression DOT identifier LPAREN expression RPAREN  */
+#line 240 "src/dj.y"
+                                                         {
+        yyval = newAST(DOT_METHOD_CALL_EXPR, yyvsp[-5], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-3]);
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1707 "src/dj.tab.c"
+    break;
+
+  case 37: /* expression: expression PLUS expression  */
+#line 245 "src/dj.y"
+                                 {
+        yyval = newAST(PLUS_EXPR, yyvsp[-2], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[0]);
+    }
+#line 1716 "src/dj.tab.c"
+    break;
+
+  case 38: /* expression: expression MINUS expression  */
+#line 249 "src/dj.y"
+                                  {
+        yyval = newAST(MINUS_EXPR, yyvsp[-2], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[0]);
+    }
+#line 1725 "src/dj.tab.c"
+    break;
+
+  case 39: /* expression: expression TIMES expression  */
+#line 253 "src/dj.y"
+                                  {
+        yyval = newAST(TIMES_EXPR, yyvsp[-2], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[0]);
+    }
+#line 1734 "src/dj.tab.c"
+    break;
+
+  case 40: /* expression: expression EQUALITY expression  */
+#line 257 "src/dj.y"
+                                     {
+        yyval = newAST(EQUALITY_EXPR, yyvsp[-2], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[0]);
+    }
+#line 1743 "src/dj.tab.c"
+    break;
+
+  case 41: /* expression: expression LESS expression  */
+#line 261 "src/dj.y"
+                                 {
+        yyval = newAST(LESS_THAN_EXPR, yyvsp[-2], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[0]);
+    }
+#line 1752 "src/dj.tab.c"
+    break;
+
+  case 42: /* expression: NOT expression  */
+#line 265 "src/dj.y"
+                     {
+        yyval = newAST(NOT_EXPR, yyvsp[0], 0, NULL, yylineno);
+    }
+#line 1760 "src/dj.tab.c"
+    break;
+
+  case 43: /* expression: expression OR expression  */
+#line 268 "src/dj.y"
+                               {
+        yyval = newAST(OR_EXPR, yyvsp[-2], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[0]);
+    }
+#line 1769 "src/dj.tab.c"
+    break;
+
+  case 44: /* expression: identifier ASSIGN expression  */
+#line 272 "src/dj.y"
+                                   {
+        yyval = newAST(ASSIGN_EXPR, yyvsp[-2], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[0]);
+    }
+#line 1778 "src/dj.tab.c"
+    break;
+
+  case 45: /* expression: expression DOT identifier ASSIGN expression  */
+#line 276 "src/dj.y"
+                                                  {
+        yyval = newAST(DOT_ASSIGN_EXPR, yyvsp[-4], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-2]);
+        appendToChildrenList(yyval, yyvsp[0]);
+    }
+#line 1788 "src/dj.tab.c"
+    break;
+
+  case 46: /* expression: IF LPAREN expression RPAREN LBRACE expression_list RBRACE ELSE LBRACE expression_list RBRACE  */
+#line 281 "src/dj.y"
+                                                                                                   {
+        yyval = newAST(IF_THEN_ELSE_EXPR, yyvsp[-8], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-5]);
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1798 "src/dj.tab.c"
+    break;
+
+  case 47: /* expression: WHILE LPAREN expression RPAREN LBRACE expression_list RBRACE  */
+#line 286 "src/dj.y"
+                                                                   {
+        yyval = newAST(WHILE_EXPR, yyvsp[-4], 0, NULL, yylineno);
+        appendToChildrenList(yyval, yyvsp[-1]);
+    }
+#line 1807 "src/dj.tab.c"
+    break;
+
+  case 48: /* expression: ASSERT expression  */
+#line 290 "src/dj.y"
+                        {
+        yyval = newAST(ASSERT_EXPR, yyvsp[0], 0, NULL, yylineno);
+    }
+#line 1815 "src/dj.tab.c"
+    break;
+
+  case 49: /* expression: PRINTNAT LPAREN expression RPAREN  */
+#line 293 "src/dj.y"
+                                        {
+        yyval = newAST(PRINT_EXPR, yyvsp[-1], 0, NULL, yylineno);
+    }
+#line 1823 "src/dj.tab.c"
+    break;
+
+  case 50: /* expression: READNAT LPAREN RPAREN  */
+#line 296 "src/dj.y"
+                            {
+        yyval = newAST(READ_EXPR, NULL, 0, NULL, yylineno);
+    }
+#line 1831 "src/dj.tab.c"
+    break;
+
+  case 51: /* data_type: NATTYPE  */
+#line 302 "src/dj.y"
+              {
+        yyval = newAST(NAT_TYPE, NULL, 0, NULL, yylineno);
+    }
+#line 1839 "src/dj.tab.c"
+    break;
+
+  case 52: /* data_type: identifier  */
+#line 305 "src/dj.y"
+                 {
+        yyval = yyvsp[0];
+    }
+#line 1847 "src/dj.tab.c"
+    break;
+
+  case 53: /* identifier: ID  */
+#line 311 "src/dj.y"
+         {
+        yyval = newAST(AST_ID, NULL, 0, getID(yytext), yylineno);
+    }
+#line 1855 "src/dj.tab.c"
+    break;
+
+
+#line 1859 "src/dj.tab.c"
 
       default: break;
     }
@@ -1351,24 +2047,74 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 29 "src/dj.y"
+#line 316 "src/dj.y"
 
 
 int main(int argc, char **argv) {
   if(argc!=2) {
-    printf("Usage: dj <filename>\n");
+    printf("Usage: parsedj filename\n");
     exit(-1);
   }
-  
-  // open the input file
   yyin = fopen(argv[1],"r");
   if(yyin==NULL) {
     printf("ERROR: could not open file %s\n",argv[1]);
     exit(-1);
   }
   
-  // tokenize the input file
-  while(yylex()!=ENDOFFILE) { }
+  /* parse the input program */
+  yyparse();
+  if (DEBUG_AST) {
+    printf("****** begin abstract syntax tree for DJ program ******\n");
+    printAST(pgmAST);
+    printf("****** end abstract syntax tree for DJ program ******\n");
+  }
+  
+  /* set up symbol tables */
+  setupSymbolTables(pgmAST);
+  if (DEBUG_SYMTBL) {
+    printf("****** begin classes symbol table for DJ program ******\n");
+    for (int i = 0; i < numClasses; i++)
+    {
+        printf("Class: %s; Super: %d; isFinal: %d\n", classesST[i].className, classesST[i].superclass, classesST[i].isFinal);
+        for (int j = 0; j < classesST[i].numVars; j++)
+            printf("   FieldType: %d; FieldName: %s\n", classesST[i].varList[j].type, classesST[i].varList[j].varName); 
+        for (int j = 0; j < classesST[i].numMethods; j++)
+           printf("   MethodName: %s; ReturnType: %d; ParamName: %s; ParamType: %d; isFinal: %d\n", classesST[i].methodList[j].methodName, classesST[i].methodList[j].returnType, classesST[i].methodList[j].paramName, classesST[i].methodList[j].paramType, classesST[i].methodList[j].isFinal); 
+    }
+    for (int i = 0; i < numMainBlockLocals; i++)
+        printf("MainLocalType: %d; MainLocalName: %s\n", mainBlockST[i].type, mainBlockST[i].varName); 
+    printf("****** end classes symbol table for DJ program ******\n");
+  }
+
+	/* typecheck the input program */
+  typecheckProgram();
+ 
+  /* generate NASM code */
+	FILE *out = fopen("program.asm", "w");
+	if (out == NULL) {
+	    printf("ERROR: could not open program.asm for writing\n");
+	    exit(-1);
+	}
+	
+	generateNASM(out);
+	fclose(out);
+
+  // Execute the Build Commands
+  int nasmStatus = system("nasm -f elf64 program.asm -o program.o");
+  if (nasmStatus != 0) {
+      fprintf(stderr, "Error: NASM failed to assemble.\n");
+      return 1;
+  }
+
+  int ldStatus = system("ld program.o -o program");
+  if (ldStatus != 0) {
+      fprintf(stderr, "Error: Linker failed.\n");
+      return 1;
+  }
+
+  // Run the generated program
+  int runStatus = system("./program");
+  printf("\n--- Program exited with code: %d ---\n", runStatus);
   
   return 0;
 }
