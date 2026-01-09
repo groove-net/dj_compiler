@@ -1,4 +1,4 @@
-Before we begin writing a compiler, we need to study Assembly language. 
+Before we begin writing code generation, we need to study Assembly language. 
 
 A processor can only understand and execute machine instructions. These instructions are simply binary numbers stored in the computer. Typically, each assembly language instruction is translated into one machine instruction by an **assembler**.
 
