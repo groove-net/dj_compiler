@@ -1,0 +1,5 @@
+final class C extends Object {}
+class D extends C {} //Error: extension of a "final" class
+main {
+    0;
+}

@@ -1,0 +1,11 @@
+class C extends Object {
+  nat foo(Object o) {
+    nat i;
+    0;
+  }
+}
+main {
+  C o;
+  while(o) {1;}; //non-nat type in loop test
+  0;
+}

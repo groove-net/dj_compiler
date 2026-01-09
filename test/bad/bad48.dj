@@ -1,0 +1,5 @@
+main {
+    Object o;
+    o = new Object();
+    assert o; //asserted expression has non-nat type
+}

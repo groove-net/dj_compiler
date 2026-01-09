@@ -1,0 +1,9 @@
+// Echoes user input until a zero is entered, which causes the assert 
+// to fail and terminate the program
+
+main {
+  while(1) {
+    assert assert assert 1; //First be super sure that 1 isn't 0
+    printNat(assert readNat());
+  };
+}

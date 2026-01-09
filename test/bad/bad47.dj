@@ -1,0 +1,9 @@
+class C extends Object {
+    final nat foo(nat bar) {0;}
+}
+class D extends C {
+    nat foo(nat bar) {1;} //Error: overriding of a final method
+}
+main {
+    0;
+}

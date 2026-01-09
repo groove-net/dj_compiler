@@ -1,0 +1,20 @@
+//This program causes DISMs to run out of memory
+//and halt, so nothing gets printed.
+
+class C extends Object {
+  nat i;
+  nat j;
+  nat k;
+  nat l;
+  nat m;
+  nat n;
+}
+main {
+  nat n;
+  C o;
+  while(n<11000) {
+    o = new C();  //allocate heap space for o
+    n=n+1;
+  };
+  printNat(99);  //should not execute on a DISM
+}

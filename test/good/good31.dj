@@ -1,0 +1,14 @@
+class C1 extends Object {
+  final nat foo (nat unused) {0;}
+}
+
+final class C2 extends C1 {
+  nat bar(nat unused) {1;}
+} 
+
+main {
+  C1 o;
+  o = new C2();
+  printNat(o.foo(0));
+  printNat((new C2()).bar(0));
+}

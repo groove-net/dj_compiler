@@ -1,0 +1,29 @@
+// This program tests the short-circuit || operation.
+// The correct output is:
+//  3
+//  987
+//  4
+//  987
+//  4
+//  987
+
+class Tester extends Object {
+  nat print4return1(nat unused) { printNat(4); 1; }
+}
+
+main {
+  Tester test;
+  test = new Tester();
+
+  if(0 || 0) {printNat(987);}
+  else {printNat(3);};
+
+  if(1 || test.print4return1(0)) {printNat(987);}
+  else {printNat(3);};
+
+  if(test.print4return1(0) || 0) {printNat(987);}
+  else {printNat(3);};
+
+  if(0 || test.print4return1(0)) {printNat(987);}
+  else {printNat(3);};
+}
