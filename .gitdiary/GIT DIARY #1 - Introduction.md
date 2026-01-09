@@ -48,4 +48,4 @@ Despite the amount of research activity in recent years, however, the basics of 
 
 A compiler consists internally of a number of steps, or **phases**, that perform distinct logical operations. It is helpful to think of these phases as separate pieces within the compiler, and they may indeed be written as separately coded operations although in practice they are often grouped together. The phases of a compiler are shown in Figure 1.1, together with three auxiliary components that interact with some or all of the phases: the literal table, the symbol table, and the error handler.
 
-![image.png](attachment:d88b397e-674c-453e-bf86-197e799bda35:image.png)
+![image.png](https://github.com/groove-net/dj_compiler/blob/master/.gitdiary/figure1.2.png)
