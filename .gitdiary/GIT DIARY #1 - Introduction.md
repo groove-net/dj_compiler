@@ -1,6 +1,6 @@
 **Compilers** are computer programs that translate one language to another. A compiler takes as its input a program written in its **source language** and produces an equivalent program written in its **target language**. Usually, the source language is a **high-level language**, such as C or C++, and the target language is **object code** (sometimes also called **machine code**) for the target machine, that is, code written in the machine instructions of the computer on which it is to be executed. We can view this process schematically as follows:
 
-![image.png](https://github.com/groove-net/dj_compiler/blob/main/.gitdiary/figure1.1.png)
+![image.png](https://raw.githubusercontent.com/groove-net/dj_compiler/refs/heads/main/.gitdiary/figure1.1.png)
 
 A compiler is a fairly complex program that can be anywhere from 10,000 to 1,000,000 lines of code. Writing such a program, or even understanding it, is not a simple task, and most computer scientists and professionals will never write a complete compiler. Nevertheless, compilers are used in almost all forms of computing, and anyone professionally involved with computers should know the basic organization and operation of a compiler. In addition, a frequent task in computer applications is the development of command interpreters and interface programs, which are smaller than compilers but which use the same techniques. A knowledge of these techniques is, therefore, of significant practical use.
 
@@ -48,4 +48,4 @@ Despite the amount of research activity in recent years, however, the basics of 
 
 A compiler consists internally of a number of steps, or **phases**, that perform distinct logical operations. It is helpful to think of these phases as separate pieces within the compiler, and they may indeed be written as separately coded operations although in practice they are often grouped together. The phases of a compiler are shown in Figure 1.1, together with three auxiliary components that interact with some or all of the phases: the literal table, the symbol table, and the error handler.
 
-![image.png](https://github.com/groove-net/dj_compiler/blob/main/.gitdiary/figure1.2.png)
+![image.png](https://raw.githubusercontent.com/groove-net/dj_compiler/refs/heads/main/.gitdiary/figure1.2.png)
